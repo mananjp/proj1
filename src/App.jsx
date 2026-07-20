@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Contact from './pages/Contact'
-
+import Projects from './pages/Projects'
 import Resources from './pages/resources'
 
 // Placeholders for other routes mapped to Contact for now
@@ -22,7 +22,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/media" element={<Placeholder title="Media" />} />
-        <Route path="/projects" element={<Placeholder title="Projects" />} />
+        <Route path="/projects" element={<Projects />} />
         <Route path="/resume" element={<Placeholder title="Resume" />} />
         <Route path="/resources" element={<Resources />} />
       </Routes>
