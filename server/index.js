@@ -52,6 +52,6 @@ app.use((err, req, res, next) => {
 
 // Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 Express server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-  console.log(`📍 Task Endpoints available at: http://localhost:${PORT}/api/tasks`);
+  console.log(` Express server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(` Task Endpoints available at: http://localhost:${PORT}/api/tasks`);
 });
