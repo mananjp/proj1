@@ -16,6 +16,7 @@ const Navbar = () => {
         <Link to="/">Manan Panchal</Link>
       </div>
       <div className="navbar-links">
+        <Link to="/tasks">Tasks</Link>
         <Link to="/contact">Contact</Link>
         <Link to="/media">Media</Link>
         <Link to="/projects">Projects</Link>

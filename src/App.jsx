@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Contact from './pages/Contact'
 import Projects from './pages/Projects'
 import Resources from './pages/resources'
+import Tasks from './pages/Tasks'
 
 // Placeholders for other routes mapped to Contact for now
 const Placeholder = ({ title }) => (
@@ -20,6 +21,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/tasks" element={<Tasks />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/media" element={<Placeholder title="Media" />} />
         <Route path="/projects" element={<Projects />} />

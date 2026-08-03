@@ -20,6 +20,8 @@ router.get('/', (req, res) => {
     );
   }
 
+  console.log(`[CRUD LOG] GET /api/tasks - Status Filter: ${status || 'None'} | Retrieved ${allTasks.length} tasks`);
+
   res.json({
     success: true,
     count: allTasks.length,
@@ -31,14 +33,17 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const taskId = parseInt(req.params.id, 10);
   if (isNaN(taskId)) {
+    console.log(`[CRUD LOG] GET /api/tasks/${req.params.id} - FAILED (Invalid ID format)`);
     return res.status(400).json({ success: false, message: 'Invalid task ID' });
   }
 
   const task = getTaskById(taskId);
   if (!task) {
+    console.log(`[CRUD LOG] GET /api/tasks/${taskId} - FAILED (Task not found)`);
     return res.status(404).json({ success: false, message: 'Task not found' });
   }
 
+  console.log(`[CRUD LOG] GET /api/tasks/${taskId} - SUCCESS:`, task);
   res.json({ success: true, data: task });
 });
 
@@ -47,6 +52,7 @@ router.post('/', (req, res) => {
   const { body, status } = req.body;
 
   if (!body || typeof body !== 'string' || !body.trim()) {
+    console.log(`[CRUD LOG] POST /api/tasks - FAILED (Body missing or empty)`);
     return res.status(400).json({
       success: false,
       message: 'Task body is required and must be a non-empty string'
@@ -55,6 +61,7 @@ router.post('/', (req, res) => {
 
   const validStatuses = ['pending', 'in-progress', 'completed'];
   if (status && !validStatuses.includes(status.toLowerCase())) {
+    console.log(`[CRUD LOG] POST /api/tasks - FAILED (Invalid status: ${status})`);
     return res.status(400).json({
       success: false,
       message: `Invalid status. Valid options are: ${validStatuses.join(', ')}`
@@ -65,6 +72,8 @@ router.post('/', (req, res) => {
     body: body.trim(),
     status: status ? status.toLowerCase() : 'pending'
   });
+
+  console.log(`[CRUD LOG] POST /api/tasks - CREATED Task ID #${newTask.id}:`, newTask);
 
   res.status(201).json({
     success: true,
@@ -77,12 +86,14 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   const taskId = parseInt(req.params.id, 10);
   if (isNaN(taskId)) {
+    console.log(`[CRUD LOG] PUT /api/tasks/${req.params.id} - FAILED (Invalid ID format)`);
     return res.status(400).json({ success: false, message: 'Invalid task ID' });
   }
 
   const { body, status } = req.body;
 
   if (body !== undefined && (typeof body !== 'string' || !body.trim())) {
+    console.log(`[CRUD LOG] PUT /api/tasks/${taskId} - FAILED (Task body empty)`);
     return res.status(400).json({
       success: false,
       message: 'Task body cannot be empty'
@@ -91,6 +102,7 @@ router.put('/:id', (req, res) => {
 
   const validStatuses = ['pending', 'in-progress', 'completed'];
   if (status && !validStatuses.includes(status.toLowerCase())) {
+    console.log(`[CRUD LOG] PUT /api/tasks/${taskId} - FAILED (Invalid status: ${status})`);
     return res.status(400).json({
       success: false,
       message: `Invalid status. Valid options are: ${validStatuses.join(', ')}`
@@ -103,8 +115,11 @@ router.put('/:id', (req, res) => {
   });
 
   if (!updated) {
+    console.log(`[CRUD LOG] PUT /api/tasks/${taskId} - FAILED (Task not found)`);
     return res.status(404).json({ success: false, message: 'Task not found' });
   }
+
+  console.log(`[CRUD LOG] PUT /api/tasks/${taskId} - UPDATED Task ID #${taskId}:`, updated);
 
   res.json({
     success: true,
@@ -117,13 +132,17 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const taskId = parseInt(req.params.id, 10);
   if (isNaN(taskId)) {
+    console.log(`[CRUD LOG] DELETE /api/tasks/${req.params.id} - FAILED (Invalid ID format)`);
     return res.status(400).json({ success: false, message: 'Invalid task ID' });
   }
 
   const deleted = deleteTask(taskId);
   if (!deleted) {
+    console.log(`[CRUD LOG] DELETE /api/tasks/${taskId} - FAILED (Task not found)`);
     return res.status(404).json({ success: false, message: 'Task not found' });
   }
+
+  console.log(`[CRUD LOG] DELETE /api/tasks/${taskId} - DELETED Task ID #${taskId}`);
 
   res.json({
     success: true,
