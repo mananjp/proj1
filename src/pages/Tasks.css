@@ -254,14 +254,46 @@
 .task-top {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.8rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
-.task-id {
-  font-size: 0.8rem;
-  font-weight: 700;
-  opacity: 0.5;
+.task-title-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.form-input:focus {
+  border-color: #3b82f6;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.task-description-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  opacity: 0.8;
+  margin-top: 0.2rem;
 }
 
 .badge {
@@ -291,11 +323,24 @@
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.task-body {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: inherit;
+.priority-high {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
+
+.priority-medium {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.priority-low {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
 
 .task-actions {
   display: flex;

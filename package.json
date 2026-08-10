@@ -7,6 +7,7 @@
     "dev": "vite",
     "server": "nodemon server/index.js",
     "start:server": "node server/index.js",
+    "seed": "node server/seed.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
     "build": "vite build",
     "lint": "eslint .",
@@ -17,6 +18,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "lucide-react": "^1.24.0",
+    "mongoose": "^9.9.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1"

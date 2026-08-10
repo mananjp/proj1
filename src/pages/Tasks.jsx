@@ -10,14 +10,18 @@ const Tasks = () => {
   const [error, setError] = useState(null);
   
   // New task form state
-  const [newBody, setNewBody] = useState('');
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
   const [newStatus, setNewStatus] = useState('pending');
+  const [newPriority, setNewPriority] = useState('medium');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Edit task modal / inline state
+  // Edit task modal state
   const [editingTask, setEditingTask] = useState(null);
-  const [editBody, setEditBody] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [editStatus, setEditStatus] = useState('pending');
+  const [editPriority, setEditPriority] = useState('medium');
 
   // Fetch tasks
   const fetchTasks = async (statusFilter = filter) => {
@@ -48,20 +52,28 @@ const Tasks = () => {
   // Create Task
   const handleCreateTask = async (e) => {
     e.preventDefault();
-    if (!newBody.trim()) return;
+    if (!newTitle.trim()) return;
 
     try {
       setIsSubmitting(true);
       const res = await fetch(API_BASE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: newBody, status: newStatus }),
+        body: JSON.stringify({
+          title: newTitle,
+          body: newTitle, // fallback
+          description: newDescription,
+          status: newStatus,
+          priority: newPriority
+        }),
       });
       const data = await res.json();
 
       if (data.success) {
-        setNewBody('');
+        setNewTitle('');
+        setNewDescription('');
         setNewStatus('pending');
+        setNewPriority('medium');
         fetchTasks();
       } else {
         alert(data.message || 'Failed to add task');
@@ -95,8 +107,10 @@ const Tasks = () => {
   // Open Edit Modal
   const startEditing = (task) => {
     setEditingTask(task);
-    setEditBody(task.body);
-    setEditStatus(task.status);
+    setEditTitle(task.title || task.body || '');
+    setEditDescription(task.description || '');
+    setEditStatus(task.status || 'pending');
+    setEditPriority(task.priority || 'medium');
   };
 
   // Save Edit Task
@@ -108,7 +122,13 @@ const Tasks = () => {
       const res = await fetch(`${API_BASE_URL}/${editingTask.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: editBody, status: editStatus }),
+        body: JSON.stringify({
+          title: editTitle,
+          body: editTitle,
+          description: editDescription,
+          status: editStatus,
+          priority: editPriority
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -149,12 +169,20 @@ const Tasks = () => {
     }
   };
 
+  const getPriorityBadgeClass = (priority) => {
+    switch (priority) {
+      case 'high': return 'badge priority-high';
+      case 'medium': return 'badge priority-medium';
+      default: return 'badge priority-low';
+    }
+  };
+
   return (
     <div className="tasks-page-container">
       <div className="tasks-header">
         <div>
           <h1 className="tasks-title">Task Management</h1>
-          <p className="tasks-subtitle">Manage tasks efficiently with live REST API backend integration.</p>
+          <p className="tasks-subtitle">Manage tasks efficiently with MongoDB & Express Mongoose API integration.</p>
         </div>
         <div className="tasks-stats">
           <div className="stat-card">
@@ -174,28 +202,57 @@ const Tasks = () => {
           <h2>Create New Task</h2>
           <form onSubmit={handleCreateTask} className="task-form">
             <div className="form-group">
-              <label htmlFor="taskBody">Task Description</label>
-              <textarea
-                id="taskBody"
-                placeholder="Enter task details..."
-                value={newBody}
-                onChange={(e) => setNewBody(e.target.value)}
+              <label htmlFor="taskTitle">Task Title</label>
+              <input
+                type="text"
+                id="taskTitle"
+                placeholder="e.g. Design Database Schema"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
                 required
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="taskDescription">Description (Optional)</label>
+              <textarea
+                id="taskDescription"
+                placeholder="Enter details..."
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
                 rows={3}
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="taskStatus">Initial Status</label>
-              <select
-                id="taskStatus"
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value)}
-              >
-                <option value="pending">Pending</option>
-                <option value="in-progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="taskStatus">Status</label>
+                <select
+                  id="taskStatus"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="taskPriority">Priority</label>
+                <select
+                  id="taskPriority"
+                  value={newPriority}
+                  onChange={(e) => setNewPriority(e.target.value)}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
             </div>
+
             <button type="submit" disabled={isSubmitting} className="btn btn-primary">
               {isSubmitting ? 'Adding...' : '+ Add Task'}
             </button>
@@ -233,15 +290,22 @@ const Tasks = () => {
           ) : (
             <ul className="task-list">
               {tasks.map((task) => (
-                <li key={task.id} className="task-item">
+                <li key={task.id || task._id} className="task-item">
                   <div className="task-content">
                     <div className="task-top">
-                      <span className="task-id">#{task.id}</span>
+                      <span className="task-title-text">{task.title || task.body}</span>
                       <span className={getStatusBadgeClass(task.status)}>
                         {task.status}
                       </span>
+                      {task.priority && (
+                        <span className={getPriorityBadgeClass(task.priority)}>
+                          {task.priority}
+                        </span>
+                      )}
                     </div>
-                    <p className="task-body">{task.body}</p>
+                    {task.description && (
+                      <p className="task-description-text">{task.description}</p>
+                    )}
                   </div>
                   <div className="task-actions">
                     <select
@@ -262,7 +326,7 @@ const Tasks = () => {
                       ✏️ Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteTask(task.id)}
+                      onClick={() => handleDeleteTask(task.id || task._id)}
                       className="btn btn-icon btn-delete"
                       title="Delete Task"
                     >
@@ -281,29 +345,51 @@ const Tasks = () => {
         <div className="modal-backdrop">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Edit Task #{editingTask.id}</h3>
+              <h3>Edit Task: {editingTask.title || editingTask.body}</h3>
               <button onClick={() => setEditingTask(null)} className="close-btn">&times;</button>
             </div>
             <form onSubmit={handleSaveEdit} className="task-form">
               <div className="form-group">
-                <label>Task Description</label>
-                <textarea
-                  value={editBody}
-                  onChange={(e) => setEditBody(e.target.value)}
+                <label>Task Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
                   required
-                  rows={4}
+                  className="form-input"
                 />
               </div>
               <div className="form-group">
-                <label>Status</label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </select>
+                <label>Description</label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select
+                    value={editPriority}
+                    onChange={(e) => setEditPriority(e.target.value)}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
               </div>
               <div className="modal-actions">
                 <button type="button" onClick={() => setEditingTask(null)} className="btn btn-secondary">
@@ -319,6 +405,7 @@ const Tasks = () => {
       )}
     </div>
   );
+
 };
 
 export default Tasks;
