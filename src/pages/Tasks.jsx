@@ -1,9 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import './Tasks.css';
 
 const API_BASE_URL = 'http://localhost:5000/api/tasks';
 
 const Tasks = () => {
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -23,6 +28,18 @@ const Tasks = () => {
   const [editStatus, setEditStatus] = useState('pending');
   const [editPriority, setEditPriority] = useState('medium');
 
+  const getAuthHeaders = () => {
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${user?.token}`,
+    };
+  };
+
+  const handleAuthError = () => {
+    logout();
+    navigate('/auth');
+  };
+
   // Fetch tasks
   const fetchTasks = async (statusFilter = filter) => {
     try {
@@ -31,7 +48,10 @@ const Tasks = () => {
       const url = statusFilter && statusFilter !== 'all' 
         ? `${API_BASE_URL}?status=${statusFilter}` 
         : API_BASE_URL;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: getAuthHeaders() });
+      if (res.status === 401) {
+        return handleAuthError();
+      }
       const data = await res.json();
       if (data.success) {
         setTasks(data.data);
@@ -46,8 +66,10 @@ const Tasks = () => {
   };
 
   useEffect(() => {
-    fetchTasks(filter);
-  }, [filter]);
+    if (user) {
+      fetchTasks(filter);
+    }
+  }, [filter, user]);
 
   // Create Task
   const handleCreateTask = async (e) => {
@@ -58,7 +80,7 @@ const Tasks = () => {
       setIsSubmitting(true);
       const res = await fetch(API_BASE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           title: newTitle,
           body: newTitle, // fallback
@@ -67,6 +89,7 @@ const Tasks = () => {
           priority: newPriority
         }),
       });
+      if (res.status === 401) return handleAuthError();
       const data = await res.json();
 
       if (data.success) {
@@ -90,9 +113,10 @@ const Tasks = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/${task.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status: nextStatus }),
       });
+      if (res.status === 401) return handleAuthError();
       const data = await res.json();
       if (data.success) {
         fetchTasks();
@@ -121,7 +145,7 @@ const Tasks = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/${editingTask.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           title: editTitle,
           body: editTitle,
@@ -130,6 +154,7 @@ const Tasks = () => {
           priority: editPriority
         }),
       });
+      if (res.status === 401) return handleAuthError();
       const data = await res.json();
       if (data.success) {
         setEditingTask(null);
@@ -149,7 +174,9 @@ const Tasks = () => {
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
+      if (res.status === 401) return handleAuthError();
       const data = await res.json();
       if (data.success) {
         fetchTasks();

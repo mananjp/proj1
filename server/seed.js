@@ -40,9 +40,20 @@ const seedDB = async () => {
   try {
     await connectDB();
     await Task.deleteMany({});
-    console.log('[Seed] Cleared existing tasks from database.');
+    const { default: User } = await import('./models/User.js');
+    await User.deleteMany({});
+    console.log('[Seed] Cleared existing tasks and users from database.');
 
-    const createdTasks = await Task.insertMany(initialTasks);
+    const defaultUser = await User.create({
+      name: 'Demo User',
+      email: 'demo@example.com',
+      password: 'password123',
+    });
+    console.log('[Seed] Created default demo user.');
+
+    const tasksWithUser = initialTasks.map(task => ({ ...task, user: defaultUser._id }));
+
+    const createdTasks = await Task.insertMany(tasksWithUser);
     console.log(`[Seed] Successfully inserted ${createdTasks.length} initial tasks into MongoDB!`);
 
     process.exit(0);
