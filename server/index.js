@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import taskRoutes from './routes/tasks.js';
 import authRoutes from './routes/auth.js';
+import reportRoutes from './routes/reports.js';
+import settingsRoutes from './routes/settings.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -17,8 +19,8 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Support base64 image uploads for white-label logo
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -38,6 +40,8 @@ app.get('/api/health', (req, res) => {
 // Resource routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // 404 Route handler
 app.use((req, res) => {

@@ -26,8 +26,27 @@ const Navbar = () => {
       <div className="navbar-links">
         {user ? (
           <>
-            <Link to="/tasks">Tasks</Link>
-            <span style={{ fontWeight: 'bold', marginLeft: '10px' }}>Hi, {user.name}</span>
+            <Link to="/tasks" style={{ fontWeight: '600' }}>Kanban Board</Link>
+            {user.role === 'admin' && (
+              <Link to="/reports" style={{ fontWeight: '600', color: '#10b981' }}>📊 Reports</Link>
+            )}
+            <span style={{ fontWeight: '600', marginLeft: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              Hi, {user.name}
+              {user.role === 'admin' && (
+                <span style={{
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  padding: '2px 8px',
+                  borderRadius: '10px',
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  textTransform: 'uppercase'
+                }}>
+                  Admin
+                </span>
+              )}
+            </span>
             <button
               onClick={handleLogout}
               style={{
@@ -37,7 +56,8 @@ const Navbar = () => {
                 background: '#e74c3c',
                 color: 'white',
                 border: 'none',
-                borderRadius: '4px'
+                borderRadius: '6px',
+                fontWeight: '600'
               }}
             >
               Logout

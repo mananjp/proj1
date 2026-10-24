@@ -52,6 +52,131 @@ body[style*="background-color: black"] .auth-subtitle {
   border: 1px solid #fca5a5;
 }
 
+.auth-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  line-height: 1.4;
+}
+
+.demo-credentials-box {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 8px;
+  padding: 0.9rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.demo-header {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #3b82f6;
+}
+
+.demo-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-pill {
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.demo-pill:hover {
+  background: #f1f5f9;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.demo-pill.admin-pill {
+  border-left: 3px solid #ef4444;
+}
+
+.demo-pill.user-pill {
+  border-left: 3px solid #3b82f6;
+}
+
+.demo-hint {
+  font-size: 0.78rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.demo-hint code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+body[style*="background-color: black"] .demo-credentials-box {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+body[style*="background-color: black"] .demo-pill {
+  background: #262626;
+  border-color: #404040;
+  color: #f8fafc;
+}
+
+body[style*="background-color: black"] .demo-pill:hover {
+  background: #333333;
+  border-color: #60a5fa;
+}
+
+body[style*="background-color: black"] .demo-hint {
+  color: #94a3b8;
+}
+
+body[style*="background-color: black"] .demo-hint code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgot-password-link {
+  font-size: 0.8rem;
+  color: #3b82f6;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;

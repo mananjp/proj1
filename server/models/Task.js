@@ -7,6 +7,14 @@ const taskSchema = new mongoose.Schema(
       required: true,
       ref: 'User'
     },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
     title: {
       type: String,
       required: [true, 'Task title is required'],

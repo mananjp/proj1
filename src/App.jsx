@@ -9,6 +9,8 @@ import Tasks from './pages/Tasks'
 
 import { AuthProvider, AuthContext } from './context/AuthContext'
 import Auth from './pages/Auth'
+import ResetPassword from './pages/ResetPassword'
+import Reports from './pages/Reports'
 
 // Placeholders for other routes mapped to Contact for now
 const Placeholder = ({ title }) => (
@@ -35,9 +37,15 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/tasks" element={
             <PrivateRoute>
               <Tasks />
+            </PrivateRoute>
+          } />
+          <Route path="/reports" element={
+            <PrivateRoute>
+              <Reports />
             </PrivateRoute>
           } />
           <Route path="/contact" element={<Contact />} />
