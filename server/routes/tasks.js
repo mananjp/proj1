@@ -5,6 +5,8 @@ import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createTaskSchema, updateTaskSchema, getTaskSchema, deleteTaskSchema } from '../validators/task.js';
 import { sendTaskCompletedEmail } from '../services/mailService.js';
+import eventBus from '../events/eventBus.js';
+import { EVENT_TYPES } from '../events/eventTypes.js';
 
 const router = express.Router();
 
@@ -126,6 +128,14 @@ router.post('/', validate(createTaskSchema), async (req, res) => {
 
     console.log(`[CRUD LOG] POST /api/tasks - Created Task "${newTask.title}" assigned to ${targetAssignee}`);
 
+    eventBus.emitEvent(EVENT_TYPES.TASK_CREATED, {
+      taskId: String(newTask._id),
+      title: newTask.title,
+      status: newTask.status,
+      priority: newTask.priority,
+      createdBy: req.user.email
+    });
+
     res.status(201).json({
       success: true,
       message: 'Task created successfully',
@@ -193,11 +203,34 @@ router.put('/:id', validate(updateTaskSchema), async (req, res) => {
 
     console.log(`[CRUD LOG] PUT /api/tasks/${id} - UPDATED "${updatedTask.title}" (Status: ${updatedTask.status})`);
 
+    eventBus.emitEvent(EVENT_TYPES.TASK_UPDATED, {
+      taskId: String(updatedTask._id),
+      title: updatedTask.title,
+      status: updatedTask.status,
+      priority: updatedTask.priority,
+      updatedBy: req.user.email
+    });
+
     // If task was marked as completed, trigger email notification to the admin
     if (isTransitioningToCompleted) {
+      eventBus.emitEvent(EVENT_TYPES.TASK_COMPLETED, {
+        taskId: String(updatedTask._id),
+        title: updatedTask.title,
+        completedBy: req.user.email
+      });
+
       sendTaskCompletedEmail({
         task: updatedTask,
         completedBy: req.user
+      }).then((mailResult) => {
+        // Decoupled subscriber outcome lands on the bus for the telemetry tab.
+        eventBus.emitEvent(EVENT_TYPES.NOTIFICATION_SENT, {
+          channel: 'email',
+          to: process.env.ADMIN_EMAIL || 'admin',
+          taskId: String(updatedTask._id),
+          simulated: Boolean(mailResult?.simulated),
+          success: mailResult?.success !== false
+        });
       }).catch(err => {
         console.error('[MailService Background Error]:', err);
       });
@@ -240,6 +273,12 @@ router.delete('/:id', validate(deleteTaskSchema), async (req, res) => {
     await Task.findByIdAndDelete(id);
 
     console.log(`[CRUD LOG] DELETE /api/tasks/${id} - DELETED "${existingTask.title}"`);
+
+    eventBus.emitEvent(EVENT_TYPES.TASK_DELETED, {
+      taskId: String(existingTask._id),
+      title: existingTask.title,
+      deletedBy: req.user.email
+    });
 
     res.json({
       success: true,

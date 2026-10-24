@@ -1,6 +1,7 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { API_URLS } from '../config';
 import './Auth.css';
 
 const Auth = () => {
@@ -25,7 +26,7 @@ const Auth = () => {
 
     if (authMode === 'forgot') {
       try {
-        const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+        const res = await fetch(`${API_URLS.auth}/forgot-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email }),
@@ -38,7 +39,7 @@ const Auth = () => {
         } else {
           setError(data.message || 'Failed to send reset link.');
         }
-      } catch (err) {
+      } catch {
         setError('Unable to connect to the server.');
       } finally {
         setLoading(false);
@@ -47,8 +48,8 @@ const Auth = () => {
     }
 
     const url = authMode === 'login' 
-      ? 'http://localhost:5000/api/auth/login' 
-      : 'http://localhost:5000/api/auth/register';
+      ? `${API_URLS.auth}/login` 
+      : `${API_URLS.auth}/register`;
     
     try {
       const res = await fetch(url, {
@@ -72,7 +73,7 @@ const Auth = () => {
           setError(data.message || 'Authentication failed');
         }
       }
-    } catch (err) {
+    } catch {
       setError('Unable to connect to the server.');
     } finally {
       setLoading(false);

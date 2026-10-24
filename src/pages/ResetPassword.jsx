@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Lock, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { API_URLS } from '../config';
 import './ResetPassword.css';
 
 const ResetPassword = () => {
@@ -36,7 +37,7 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
+      const res = await fetch(`${API_URLS.auth}/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
@@ -49,7 +50,7 @@ const ResetPassword = () => {
       } else {
         setError(data.message || 'Failed to reset password. Link may have expired.');
       }
-    } catch (err) {
+    } catch {
       setError('Unable to connect to the server. Please try again later.');
     } finally {
       setLoading(false);

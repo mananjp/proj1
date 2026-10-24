@@ -1,11 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import taskRoutes from './routes/tasks.js';
 import authRoutes from './routes/auth.js';
 import reportRoutes from './routes/reports.js';
 import settingsRoutes from './routes/settings.js';
+import eventsRoutes from './routes/events.js';
+import jobsRoutes from './routes/jobs.js';
+import aiRoutes from './routes/ai.js';
+import { startJobWorker } from './jobs/jobQueue.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -42,6 +47,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/jobs', jobsRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 Route handler
 app.use((req, res) => {
@@ -52,7 +60,7 @@ app.use((req, res) => {
 });
 
 // Global Error Handler
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('Unhandled Server Error:', err);
   res.status(500).json({
     success: false,
@@ -62,7 +70,32 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(` Express server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   console.log(` Task Endpoints available at: http://localhost:${PORT}/api/tasks`);
+  startJobWorker();
 });
+
+// Graceful shutdown: stop accepting connections, then close the DB pool.
+const shutdown = (signal) => {
+  console.log(`\n[${signal}] Graceful shutdown initiated...`);
+  server.close(async () => {
+    console.log('[Shutdown] HTTP server closed.');
+    try {
+      await mongoose.disconnect();
+      console.log('[Shutdown] MongoDB connection closed.');
+    } catch (err) {
+      console.error('[Shutdown] Error disconnecting MongoDB:', err);
+    }
+    process.exit(0);
+  });
+
+  // Force exit if connections refuse to close within 10s.
+  setTimeout(() => {
+    console.error('[Shutdown] Forced exit after timeout.');
+    process.exit(1);
+  }, 10000).unref();
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

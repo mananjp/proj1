@@ -1,33 +1,29 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
   FileText, 
   Download, 
-  Settings, 
   Calendar, 
   User, 
   Users, 
   CheckCircle2, 
-  Clock, 
   AlertCircle, 
   TrendingUp, 
-  Filter, 
   Upload, 
   Sparkles,
   Building,
-  Mail,
   Palette,
   X,
-  Lock,
-  ChevronRight
+  Lock
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { API_URLS } from '../config';
 import './Reports.css';
 
-const API_REPORTS_URL = 'http://localhost:5000/api/reports';
-const API_SETTINGS_URL = 'http://localhost:5000/api/settings';
+const API_REPORTS_URL = API_URLS.reports;
+const API_SETTINGS_URL = API_URLS.settings;
 
 const Reports = () => {
   const { user, logout } = useContext(AuthContext);
@@ -101,7 +97,7 @@ const Reports = () => {
   // Fetch users for employee dropdown
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/users', { headers: getAuthHeaders() });
+      const res = await fetch(`${API_URLS.auth}/users`, { headers: getAuthHeaders() });
       if (res.status === 401) return handleAuthError();
       const data = await res.json();
       if (data.success) {
@@ -141,7 +137,7 @@ const Reports = () => {
       } else {
         setError(data.message || 'Failed to generate report');
       }
-    } catch (err) {
+    } catch {
       setError('Unable to fetch report data from server.');
     } finally {
       setLoading(false);
@@ -189,7 +185,7 @@ const Reports = () => {
       } else {
         alert(data.message || 'Failed to update branding settings');
       }
-    } catch (err) {
+    } catch {
       alert('Error saving branding settings');
     } finally {
       setBrandingSaving(false);

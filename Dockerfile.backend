@@ -1,0 +1,23 @@
+# Dockerfile.backend — Node.js + Express REST API
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install production dependencies only (devDeps like vite/nodemon not needed at runtime)
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy only the backend source (server/) — the frontend is built separately
+COPY server ./server
+
+# Ensure the CSV exports directory exists (also mounted as a volume in compose)
+RUN mkdir -p server/exports
+
+ENV NODE_ENV=production
+ENV PORT=3000
+EXPOSE 3000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3000/api/health || exit 1
+
+CMD ["node", "server/index.js"]

@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Task from './models/Task.js';
 import User from './models/User.js';

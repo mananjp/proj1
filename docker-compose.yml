@@ -1,0 +1,102 @@
+# Docker Compose stack for the Kanban Task Management app.
+# Services: MongoDB + Node.js backend + Nginx frontend.
+#
+# Usage:
+#   docker compose up --build
+#   Frontend:  http://localhost:8080
+#   Backend:   http://localhost:3000/api/health
+#   MongoDB:   mongodb://localhost:27017/taskdb
+#
+# Environment variables are read from the project-root .env file (see .env.example).
+
+name: kanban-task-management
+
+services:
+  # ── 1. Database (MongoDB) ────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: kanban-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: taskdb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval \"db.adminCommand('ping')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── 2. Backend REST API (Node.js + Express) ─────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: kanban-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb://mongodb:27017/taskdb
+      JWT_SECRET: ${JWT_SECRET:-dev_only_change_me_in_production}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+    ports:
+      - "3000:3000"
+    volumes:
+      - backend_exports:/app/server/exports
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── 3. Frontend (React + Vite build → Nginx) ────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: /api
+    container_name: kanban-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/nginx-health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+# ── Isolated bridge network ──────────────────────────────────────────────────
+networks:
+  kanban-network:
+    name: kanban-network
+    driver: bridge
+
+# ── Persistent volumes ───────────────────────────────────────────────────────
+volumes:
+  mongodb_data:
+    name: kanban_mongodb_data
+  backend_exports:
+    name: kanban_backend_exports

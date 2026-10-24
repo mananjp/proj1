@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
@@ -19,12 +19,16 @@ import {
   ShieldCheck,
   Check,
   X,
-  Lock
+  Lock,
+  Activity,
+  Bot
 } from 'lucide-react';
+import { API_URLS } from '../config';
+import EdaPanel from '../components/EdaPanel';
 import './Tasks.css';
 
-const API_BASE_URL = 'http://localhost:5000/api/tasks';
-const AUTH_BASE_URL = 'http://localhost:5000/api/auth';
+const API_BASE_URL = API_URLS.tasks;
+const AUTH_BASE_URL = API_URLS.auth;
 
 const COLUMNS = [
   { id: 'pending', label: 'Pending', icon: Clock, color: '#f59e0b' },
@@ -64,6 +68,13 @@ const Tasks = () => {
     assignedTo: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // EDA drawer state
+  const [isEdaOpen, setIsEdaOpen] = useState(false);
+
+  // AI Task Insights state
+  const [aiInsights, setAiInsights] = useState(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   // Toast Notification
   const [toast, setToast] = useState(null);
@@ -106,7 +117,7 @@ const Tasks = () => {
       } else {
         setError(data.message || 'Failed to fetch tasks');
       }
-    } catch (err) {
+    } catch {
       setError('Unable to connect to backend server. Make sure server is running on port 5000.');
     } finally {
       setLoading(false);
@@ -181,16 +192,72 @@ const Tasks = () => {
           dueDate: '',
           assignedTo: ''
         });
+        setAiInsights(null);
         showToast('✨ Task successfully created and added to the board!');
         fetchTasks();
       } else {
         alert(data.message || 'Failed to create task');
       }
-    } catch (err) {
+    } catch {
       alert('Error creating task');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Open the create-task modal with a clean AI insights state
+  const openCreateModal = (initialStatus = 'pending') => {
+    setFormData({
+      title: '',
+      description: '',
+      status: initialStatus,
+      priority: 'medium',
+      dueDate: '',
+      assignedTo: usersList[0]?.id || usersList[0]?._id || ''
+    });
+    setAiInsights(null);
+    setIsCreateModalOpen(true);
+  };
+
+  // AI Task Insights — calls the backend Groq service (falls back to rules)
+  const handleGenerateInsights = async () => {
+    if (!formData.title.trim()) {
+      showToast('Enter a task title first, then ask the AI assistant for insights.', 'info');
+      return;
+    }
+    try {
+      setIsAiLoading(true);
+      const res = await fetch(`${API_URLS.ai}/insights`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          title: formData.title.trim(),
+          description: formData.description.trim()
+        })
+      });
+      if (res.status === 401) return handleAuthError();
+      const data = await res.json();
+      if (data.success) {
+        setAiInsights(data.data);
+      } else {
+        showToast(data.message || 'AI insights unavailable', 'info');
+      }
+    } catch {
+      showToast('AI service unreachable — check that the backend is running.', 'info');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleApplyInsights = () => {
+    if (!aiInsights) return;
+    setFormData((prev) => ({
+      ...prev,
+      priority: aiInsights.priority || prev.priority,
+      dueDate: aiInsights.dueDate || prev.dueDate,
+      description: aiInsights.description || prev.description
+    }));
+    showToast('✨ AI suggestions applied to the task form.');
   };
 
   // Update Task Status (Drag & Drop or Button Click)
@@ -232,7 +299,7 @@ const Tasks = () => {
         setTasks(previousTasks);
         alert(data.message || 'Failed to update task status');
       }
-    } catch (err) {
+    } catch {
       setTasks(previousTasks);
       alert('Error updating task');
     }
@@ -312,7 +379,7 @@ const Tasks = () => {
       } else {
         alert(data.message || 'Failed to update task');
       }
-    } catch (err) {
+    } catch {
       alert('Error updating task');
     } finally {
       setIsSubmitting(false);
@@ -336,7 +403,7 @@ const Tasks = () => {
       } else {
         alert(data.message || 'Failed to delete task');
       }
-    } catch (err) {
+    } catch {
       alert('Error deleting task');
     }
   };
@@ -415,23 +482,24 @@ const Tasks = () => {
             </div>
           </div>
 
-          <button 
-            className="btn-create-task"
-            onClick={() => {
-              setFormData({
-                title: '',
-                description: '',
-                status: 'pending',
-                priority: 'medium',
-                dueDate: '',
-                assignedTo: usersList[0]?.id || usersList[0]?._id || ''
-              });
-              setIsCreateModalOpen(true);
-            }}
-          >
-            <Plus size={18} />
-            <span>Create Task</span>
-          </button>
+          <div className="header-buttons-row">
+            <button
+              className="btn-eda-panel"
+              onClick={() => setIsEdaOpen(true)}
+              title="Open Event Stream & Async Jobs panel"
+            >
+              <Activity size={17} />
+              <span>Event Stream &amp; Async Jobs</span>
+            </button>
+
+            <button
+              className="btn-create-task"
+              onClick={() => openCreateModal('pending')}
+            >
+              <Plus size={18} />
+              <span>Create Task</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -524,17 +592,7 @@ const Tasks = () => {
                   <button 
                     className="col-add-btn" 
                     title={`Add task in ${col.label}`}
-                    onClick={() => {
-                      setFormData({
-                        title: '',
-                        description: '',
-                        status: col.id,
-                        priority: 'medium',
-                        dueDate: '',
-                        assignedTo: usersList[0]?._id || ''
-                      });
-                      setIsCreateModalOpen(true);
-                    }}
+                    onClick={() => openCreateModal(col.id)}
                   >
                     <Plus size={16} />
                   </button>
@@ -689,6 +747,66 @@ const Tasks = () => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
+              </div>
+
+              {/* AI Task Insights (Groq via backend, graceful fallback) */}
+              <div className="ai-insights-box">
+                <div className="ai-insights-head">
+                  <h4 className="ai-insights-title">
+                    <Bot size={15} /> AI Task Insights
+                  </h4>
+                  <button
+                    type="button"
+                    className="ai-generate-btn"
+                    onClick={handleGenerateInsights}
+                    disabled={isAiLoading}
+                  >
+                    <Sparkles size={13} />
+                    {isAiLoading ? 'Thinking…' : aiInsights ? 'Regenerate' : 'Generate Insights'}
+                  </button>
+                </div>
+
+                {aiInsights && (
+                  <div className="ai-insights-body">
+                    <div className="ai-field">
+                      <span className="ai-field-label">Priority</span>
+                      <span className="ai-field-value">{aiInsights.priority}</span>
+                    </div>
+                    <div className="ai-field">
+                      <span className="ai-field-label">Suggested due</span>
+                      <span className="ai-field-value">{aiInsights.dueDate}</span>
+                    </div>
+                    <div className="ai-field">
+                      <span className="ai-field-label">Description</span>
+                      <span className="ai-field-value">{aiInsights.description}</span>
+                    </div>
+                    <div className="ai-field">
+                      <span className="ai-field-label">Action steps</span>
+                      <ol className="ai-steps-list ai-field-value">
+                        {(aiInsights.actionSteps || []).map((step, i) => (
+                          <li key={i}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div className="ai-field">
+                      <span className="ai-field-label">Reasoning</span>
+                      <span className="ai-field-value">{aiInsights.reasoning}</span>
+                    </div>
+
+                    <button type="button" className="ai-apply-btn" onClick={handleApplyInsights}>
+                      <Check size={13} /> Apply to form
+                    </button>
+
+                    <span className="ai-source-tag-row">
+                      <span className={`ai-source-tag source-${aiInsights.source}`}>
+                        {aiInsights.source === 'groq' ? 'Groq AI' : 'Rule-based fallback'}
+                      </span>
+                      {aiInsights.fallbackReason && (
+                        <span className="ai-fallback-note">{aiInsights.fallbackReason}</span>
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="form-row">
@@ -883,6 +1001,14 @@ const Tasks = () => {
           </div>
         </div>
       )}
+
+      {/* Event-Driven Architecture drawer */}
+      <EdaPanel
+        open={isEdaOpen}
+        onClose={() => setIsEdaOpen(false)}
+        onAuthError={handleAuthError}
+        onJobsCompleted={() => fetchTasks()}
+      />
     </div>
   );
 };

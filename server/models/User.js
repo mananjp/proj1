@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         'Please provide a valid email'
       ]
     },
@@ -63,7 +63,7 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   try {
     const isMatch = await bcrypt.compare(enteredPassword, this.password);
     if (isMatch) return true;
-  } catch (err) {
+  } catch {
     // If bcrypt throws an invalid hash error on corrupt string, continue to fallback check
   }
 
