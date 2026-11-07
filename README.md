@@ -177,9 +177,20 @@ The frontend is built with `VITE_API_URL=/api` so the browser calls same-origin 
 > 2. Import the repo to Vercel (configured via `vercel.json`).
 > 3. Set the Environment Variable in Vercel: `VITE_API_URL=https://my-backend.onrender.com`.
 
-## CI/CD
+## CI/CD & Automated Container Registry (GHCR)
 
-`.github/workflows/ci.yml` runs two jobs on every push/PR to `master`/`main`:
-
+`.github/workflows/ci.yml` runs automatically on every push to `master`:
 1. **Backend Lint & Test** — `npm ci`, `npm run lint`, `npm test`
 2. **Frontend Build** — `npm ci`, `npm run build`
+3. **Build & Push to GHCR** — builds the unified Docker container and publishes it to:
+   ```
+   ghcr.io/mananjp/proj1:latest
+   ```
+
+### Deploying the Pre-Built Image on Render
+Instead of building from source on Render, you can deploy the pre-built image directly:
+1. In [Render Dashboard](https://dashboard.render.com), click **New +** → **Web Service**.
+2. Choose **Existing Image**.
+3. Image URL: `ghcr.io/mananjp/proj1:latest`
+4. Make sure your GitHub package visibility is set to **Public** (or provide your GitHub PAT if Private).
+5. Add your environment variables (`NODE_ENV=production`, `JWT_SECRET`, `ADMIN_EMAIL`) and deploy! Render starts up in seconds.
