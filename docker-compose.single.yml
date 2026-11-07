@@ -1,0 +1,75 @@
+# Docker Compose stack for testing the unified single-container deployment locally.
+# Usage:
+#   docker compose -f docker-compose.single.yml up --build
+#
+# Access:
+#   Application (Frontend + Backend): http://localhost:5000
+#   Health check:                     http://localhost:5000/api/health
+
+name: kanban-single-container
+
+services:
+  # ── 1. Database (MongoDB) ────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: kanban-mongodb-single
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: taskdb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_single_data:/data/db
+    networks:
+      - kanban-single-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval \"db.adminCommand('ping')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── 2. Unified App (Frontend + Backend in 1 Container) ───────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kanban-unified-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/taskdb
+      JWT_SECRET: ${JWT_SECRET:-dev_only_change_me_in_production}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+    ports:
+      - "5000:5000"
+    volumes:
+      - app_exports:/app/server/exports
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - kanban-single-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  kanban-single-network:
+    name: kanban-single-network
+    driver: bridge
+
+volumes:
+  mongodb_single_data:
+    name: kanban_mongodb_single_data
+  app_exports:
+    name: kanban_app_exports
+

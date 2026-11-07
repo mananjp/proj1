@@ -9,6 +9,13 @@ const seedDB = async () => {
   try {
     await connectDB();
     
+    // Check if database already has users; skip if already initialized unless forced
+    const existingUsers = await User.countDocuments();
+    if (existingUsers > 0 && process.env.FORCE_SEED !== 'true') {
+      console.log(`[Seed] Database already contains ${existingUsers} user(s). Skipping seed.`);
+      process.exit(0);
+    }
+
     // Clear existing tasks and users
     await Task.deleteMany({});
     await User.deleteMany({});

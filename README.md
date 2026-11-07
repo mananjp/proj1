@@ -120,7 +120,40 @@ npm test        # node --test tests/
 
 Covers Zod validators, the event bus (IDs, telemetry, replay, listeners), the async job queue (retries, DLQ, scoping), and the AI service (fallback, response validation).
 
-## Docker
+## Docker & Deployment
+
+### 1. Unified Single Container with Embedded Local Storage (Zero Atlas Required)
+
+The root `Dockerfile` packages the React frontend, Express backend, and an **embedded MongoDB Community Server** into one self-contained image:
+- **Build stage**: builds the Vite React application.
+- **Runtime stage**: Starts embedded MongoDB on `127.0.0.1:27017` (memory-capped to 100MB for free tiers), auto-seeds demo admin/users if empty, and serves the API + SPA static assets on `$PORT`.
+- **No external database required**: You do **not** need a MongoDB Atlas account, connection string, or external cloud setup.
+
+#### Deploy to Render (Zero Setup)
+1. Push your code to GitHub.
+2. In [Render](https://dashboard.render.com), click **New +** → **Web Service** (or use the Blueprint with `render.yaml`).
+3. Connect your repository. Render automatically builds using `Dockerfile`.
+4. Configure Environment Variables in Render:
+   - `NODE_ENV`: `production`
+   - `JWT_SECRET`: A secure random secret (or let Render generate it)
+   - `ADMIN_EMAIL`: Admin email address
+   - `GROQ_API_KEY`: *(Optional)* For AI task insights
+   *(Note: `MONGODB_URI` is optional! Leave it blank to use the internal local MongoDB).*
+5. Click **Deploy Web Service**.
+
+> **Note on Storage Persistence**:
+> - When deployed on a **VPS** or **Railway** (or local Docker with `-v ./data:/data/db`), all local data persists permanently across restarts.
+> - On **Render Free Tier**, the filesystem is ephemeral (resets if the container is put to sleep after 15 min or redeployed). The container automatically runs an auto-seed check on startup so the app always has working demo data ready to test. If you require permanent persistence on Render, attach a Render Disk to `/data/db` or connect an external DB.
+
+#### Run Single Container Locally
+```bash
+docker compose -f docker-compose.single.yml up --build
+```
+Access the application at `http://localhost:5000`.
+
+---
+
+### 2. Multi-Container Stack (Development / Nginx proxy)
 
 ```bash
 docker compose up --build
@@ -133,6 +166,16 @@ docker compose up --build
 | mongodb | `27017` | Persistent volume `kanban_mongodb_data` |
 
 The frontend is built with `VITE_API_URL=/api` so the browser calls same-origin `/api`, which Nginx reverse-proxies to the `backend` service (buffering disabled for SSE). CSV artifacts persist in the `kanban_backend_exports` volume.
+
+---
+
+### 3. Deploying to Vercel (Frontend-only note)
+> **Note**: Vercel is a serverless platform and does **not** run persistent Docker containers, Node.js background workers, or Server-Sent Events (SSE).
+>
+> If you wish to host the frontend on Vercel:
+> 1. Deploy the backend container to Render or Railway to get an API URL (e.g. `https://my-backend.onrender.com`).
+> 2. Import the repo to Vercel (configured via `vercel.json`).
+> 3. Set the Environment Variable in Vercel: `VITE_API_URL=https://my-backend.onrender.com`.
 
 ## CI/CD
 

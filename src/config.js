@@ -1,7 +1,11 @@
 // Central API origin. Overridable via VITE_API_URL at build time.
-// - Dev (vite): defaults to http://localhost:5000
-// - Docker: build-arg VITE_API_URL=/api so Nginx proxies to the backend
-const configured = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:5000';
+// - Local dev (Vite): defaults to http://localhost:5000 if VITE_API_URL is unset
+// - Production (Single container): defaults to "" (same-origin relative paths) if VITE_API_URL is unset
+// - Custom/Split deployment: pass VITE_API_URL (e.g. https://api.yourdomain.com)
+const envApiUrl = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_URL : undefined;
+const isDev = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);
+const defaultBase = isDev ? 'http://localhost:5000' : '';
+const configured = (envApiUrl !== undefined && envApiUrl !== null) ? envApiUrl : defaultBase;
 
 export const API_BASE = String(configured).replace(/\/+$/, '');
 

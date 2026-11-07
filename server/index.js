@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import connectDB from './config/db.js';
 import taskRoutes from './routes/tasks.js';
 import authRoutes from './routes/auth.js';
@@ -51,11 +54,29 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/ai', aiRoutes);
 
+// Static frontend serving & SPA fallback (single container / production deployment)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.resolve(__dirname, '../dist');
+
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+
+  // Client-side routing fallback (Express 5 wildcard syntax)
+  app.get('/{*splat}', (req, res, next) => {
+    // If request starts with /api, pass to API 404 handler
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 // 404 Route handler
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'API endpoint not found'
+    message: req.path.startsWith('/api') ? 'API endpoint not found' : 'Not found'
   });
 });
 
